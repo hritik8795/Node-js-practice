@@ -1,25 +1,30 @@
 const express = require("express");
-const dotenv = require("dotenv");
+require("./config/config"); // ✅ Must come before other imports that use env
 const connectDB = require("./config/db");
+
 const authRoutes = require("./routes/authRoutes");
 const todoRoutes = require("./routes/todoRoutes");
-const path = require("path");
 const photoRoutes = require("./routes/photoRoutes");
 
-dotenv.config();
+const path = require("path");
+const app = express();
+
+// Connect to DB after loading env
 connectDB();
 
-const app = express();
+// Middlewares
 app.use(express.json());
-
-app.use("/api/auth", authRoutes);
-
-const PORT = process.env.PORT || 5000;
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/api/todos", todoRoutes);
 
-// Use photo routes
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/todos", todoRoutes);
 app.use("/api/photos", photoRoutes);
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () =>
+  console.log(
+    `🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`
+  )
+);
