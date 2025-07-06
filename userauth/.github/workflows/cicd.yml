@@ -1,0 +1,35 @@
+name: Deploy Node Application
+
+on:
+  push: 
+    branches:
+      - mean-ec2-docker
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Create .env file
+        run:   echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
+                echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+                echo "EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}" >> .env
+                echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+      - name: Login to docker hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}       
+      - name: Build docker image
+        run: docker build -t solemn/nodejs-app .  
+      - name: Publish image to docker hub
+        run: docker push solemn/nodejs-app:latest
+        
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Pull image from docker hub
+        run: docker pull solemn/nodejs-app:latest
+      - name: Delete old container
+        run: docker rm -f nodejs-app-container  
+      - name: Run docker container
+        run: docker run -d -p 4000:4000 --name nodejs-app-container solemn/nodejs-app  
